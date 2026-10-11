@@ -15,7 +15,7 @@ ranking:
 - model: M1
   weight: 0.0075
   justification: 'Structurally cannot hold B-derived material: B consumed always equals P+Q (checked by
-    simulation, gap ~1e-16), but the data show a gap of ~0.10 M. Best chi2 ~5900 from 20 random starts.
+    simulation, gap ~1e-16), but the data show a gap of ~0.10 M. Best chi2 ~5900 from random-start refits.
     Small non-zero weight only because the noise model and the candidate set are assumptions.'
 - model: M5
   weight: 0.0075
@@ -28,4 +28,4 @@ ranking:
 - model: M6
   weight: 0.0075
   justification: B goes only into P, so B consumed equals P at all times, which contradicts the observed
-    gap. Worst fit (best chi2 ~10968). Small allowance for untested assumptions.
+    gap. Worst fit (best chi2 ~11,000). Small allowance for untested assumptions.
