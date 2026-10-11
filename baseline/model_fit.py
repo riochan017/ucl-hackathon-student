@@ -82,10 +82,11 @@ def make_resid(model, data):
     return resid
 
 
-def fit_model(model, data):
+def fit_model(model, data, x0=None):
+    """Least-squares fit. x0 defaults to the stored START values; pass x0 for a random-start test."""
     lo, hi = bounds(model)
-    sol = least_squares(make_resid(model, data), np.array(START[model]),
-                        bounds=(lo, hi), max_nfev=300)
+    x0 = np.array(START[model] if x0 is None else x0, dtype=float)
+    sol = least_squares(make_resid(model, data), x0, bounds=(lo, hi), max_nfev=300)
     chi2 = 2 * sol.cost
     cov = np.linalg.pinv(sol.jac.T @ sol.jac)
     cov = (cov + cov.T) / 2

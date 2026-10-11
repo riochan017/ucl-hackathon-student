@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from checks import loro_calibration, multistart
 from model_fit import (CANDIDATES, HELDOUT, SUBMISSION, Conditions, bic_weights,
                        ensure_submission_dir, fit_all, load_b, simulate, to_params)
 
@@ -145,6 +146,61 @@ def fig_campaign(fits):
     save(fig, "fig5_campaign.png")
 
 
+def fig_robustness(b):
+    """chi2 reached from random starting points: is a bad fit the model's fault or the optimiser's?"""
+    df = multistart(b)
+    models = list(CANDIDATES)
+    rows = []
+    for m in models:
+        c = df[df["model"] == m]["chi2"].dropna()
+        rows.append({"model": m, "n_starts": len(c), "best_chi2": round(float(c.min()), 1),
+                     "worst_chi2": round(float(c.max()), 1),
+                     "starts_within_1_of_best": int((c <= c.min() + 1.0).sum())})
+    tab = pd.DataFrame(rows)
+    tab.to_csv(os.path.join(FIG, "table_robustness.csv"), index=False)
+    print("[replicate] multi-start robustness (chi2 on 181 points)\n" + tab.to_string(index=False))
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for i, m in enumerate(models):
+        c = df[df["model"] == m]["chi2"].dropna().to_numpy()
+        ax.plot(np.full(len(c), i) + np.linspace(-0.15, 0.15, len(c)), c, "o", ms=5, alpha=0.8)
+    ax.set_yscale("log")
+    ax.axhline(181, color="gray", ls=":", label="chi2 = number of data points (181)")
+    ax.set_xticks(range(len(models)))
+    ax.set_xticklabels(models)
+    ax.set_ylabel("chi2 reached from a random start")
+    ax.set_title("Random starts: M2 and M4 always reach about 155; the others stay far above")
+    ax.legend(fontsize=8)
+    save(fig, "fig6_robustness.png")
+
+
+def fig_calibration(b):
+    """Leave-one-run-out check: how often do the 90% intervals contain the measured value?"""
+    d = loro_calibration(b)
+    by_sp = d.groupby("species")["inside"].agg(["mean", "count"]).reindex(["A", "B", "P", "Q"])
+    by_run = d.groupby("run")["inside"].agg(["mean", "count"])
+    out = by_sp.reset_index().rename(columns={"mean": "coverage", "count": "n_points"})
+    out.insert(0, "group", "species")
+    out = out.rename(columns={"species": "name"})
+    r = by_run.reset_index().rename(columns={"run": "name", "mean": "coverage", "count": "n_points"})
+    r.insert(0, "group", "held-out run")
+    tab = pd.concat([out, r], ignore_index=True).round({"coverage": 3})
+    tab.to_csv(os.path.join(FIG, "table_calibration.csv"), index=False)
+    print("[replicate] leave-one-run-out coverage of the 90% intervals (target 0.90)\n" + tab.to_string(index=False))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.2), sharey=True)
+    for ax, t, ttl in [(axes[0], by_sp, "by species"), (axes[1], by_run, "by held-out run")]:
+        ax.bar(range(len(t)), t["mean"])
+        ax.set_xticks(range(len(t)))
+        ax.set_xticklabels([f"{i}\n(n={int(n)})" for i, n in zip(t.index, t["count"])])
+        ax.axhline(0.9, color="r", ls="--", label="target 0.90")
+        ax.set_ylim(0, 1.05)
+        ax.set_title(ttl)
+    axes[0].set_ylabel("share of measurements inside the 90% interval")
+    axes[0].legend(fontsize=8)
+    fig.suptitle("Calibration, leave one run out (temperature extrapolation only)")
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    save(fig, "fig7_calibration.png")
+
+
 def main():
     ensure_submission_dir()
     b = load_b()
@@ -157,6 +213,8 @@ def main():
     fig_bookkeeping(b)
     fig_predictions()
     fig_campaign(fits)
+    fig_robustness(b)
+    fig_calibration(b)
 
 
 if __name__ == "__main__":
