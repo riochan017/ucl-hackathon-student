@@ -1,13 +1,14 @@
-# Ranked hypothesis set. Weights: M2/M4 are the BIC weights (0.57/0.43) shaded slightly down;
-# the four rejected models get a small allowance (0.0075 each) for untested assumptions.
+# Ranked hypothesis set. M2 and M4 are statistically tied on the released data (raw BIC weights 0.57/0.43,
+# deltaBIC 0.6), so the submitted weights are near-equal (0.50/0.47); the four rejected models get a
+# small floor (0.0075 each), so the weights sum to 1.0.
 ranking:
 - model: M2
-  weight: 0.55
+  weight: 0.50
   justification: Fits to within noise (chi2 155.0 on 181 points, 6 parameters). Its hidden intermediate
     I reproduces the ~0.10 M gap between B consumed and P+Q seen at all five temperatures. Inseparable
     from M4 on the released data (BIC difference 0.6, raw weights 0.57 vs 0.43).
 - model: M4
-  weight: 0.42
+  weight: 0.47
   justification: Equally good fit (chi2 155.6, 6 parameters) and the same intermediate mechanism as M2.
     It differs only in that Q forms from I + A. A stays between ~0.7 and 1.0 M in every released run,
     so this cannot be tested on the released data; low-A, high-B runs in the campaign can.
